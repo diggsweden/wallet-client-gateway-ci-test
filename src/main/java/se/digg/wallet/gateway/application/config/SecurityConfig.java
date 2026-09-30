@@ -1,0 +1,134 @@
+// SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+package se.digg.wallet.gateway.application.config;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.List;
+import java.util.Objects;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.util.AntPathMatcher;
+import se.digg.wallet.gateway.application.auth.ChallengeResponseAuthentication;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+  public static final String API_KEY_HEADER = "X-API-KEY";
+
+  private final byte[] apiSecret;
+  private final byte[] oldApiSecret;
+  private final List<String> publicPaths;
+  private final List<String> apiKeyPaths;
+  private final AntPathMatcher pathMatcher;
+
+  public SecurityConfig(
+      ApplicationConfig applicationConfig) {
+    this.apiSecret = toBytes(Objects.requireNonNull(applicationConfig.apisecret()));
+    this.oldApiSecret = toBytes(applicationConfig.oldapisecret());
+    this.publicPaths = applicationConfig.publicPaths();
+    this.apiKeyPaths = applicationConfig.apiKeyPaths();
+    this.pathMatcher = new AntPathMatcher();
+  }
+
+  private static byte[] toBytes(String secret) {
+    return secret == null || secret.isBlank() ? null : secret.getBytes(StandardCharsets.UTF_8);
+  }
+
+  @Bean
+  public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity httpSecurity) {
+    httpSecurity
+        .csrf(AbstractHttpConfigurer::disable)
+        // Unused by this stateless API (no redirect-based login flow); disabling it avoids
+        // per-request session mishits against Valkey.
+        .requestCache(RequestCacheConfigurer::disable)
+        .authorizeHttpRequests((authorize) -> authorize
+            .anyRequest()
+            .access(gatewayAuthorizationMgr()));
+
+    return httpSecurity.build();
+  }
+
+  // Disables auto config of user repository
+  @Bean
+  AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) {
+    return cfg.getAuthenticationManager();
+  }
+
+  /**
+   * Same as normal "authenticated" except it also checks that it's a valid
+   * ChallengeResponseAuthentication.
+   */
+  AuthorizationManager<RequestAuthorizationContext> challengeResponseAuthorizationMgr() {
+    var defaultAuthenticationManager = AuthenticatedAuthorizationManager.authenticated();
+    return (authentication, context) -> new AuthorizationDecision(
+        checkIfGranted(defaultAuthenticationManager.authorize(authentication, context))
+            && authentication.get() instanceof ChallengeResponseAuthentication);
+  }
+
+  private AuthorizationManager<RequestAuthorizationContext> gatewayAuthorizationMgr() {
+    var challengeResponseMgr = challengeResponseAuthorizationMgr();
+    return (authentication, context) -> {
+      var request = context.getRequest();
+      if (isPublicPath(request)) {
+        return new AuthorizationDecision(true);
+      }
+
+      boolean apiKeyGranted = hasValidApiKey(request);
+      if (isApiKeyPath(request)) {
+        return new AuthorizationDecision(apiKeyGranted);
+      }
+
+      boolean authGranted = checkIfGranted(challengeResponseMgr.authorize(authentication, context));
+      return new AuthorizationDecision(apiKeyGranted && authGranted);
+    };
+  }
+
+  boolean hasValidApiKey(HttpServletRequest request) {
+    var header = request.getHeader(API_KEY_HEADER);
+    if (header == null) {
+      return false;
+    }
+    return constantTimeEquals(apiSecret, header) || constantTimeEquals(oldApiSecret, header);
+  }
+
+  private boolean constantTimeEquals(byte[] secret, String header) {
+    if (secret == null) {
+      return false;
+    }
+    return MessageDigest.isEqual(secret, header.getBytes(StandardCharsets.UTF_8));
+  }
+
+  boolean isPublicPath(HttpServletRequest request) {
+    return matchesAny(publicPaths, request);
+  }
+
+  boolean isApiKeyPath(HttpServletRequest request) {
+    return matchesAny(apiKeyPaths, request);
+  }
+
+  private boolean matchesAny(List<String> patterns, HttpServletRequest request) {
+    var path = request.getServletPath();
+    return patterns.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+  }
+
+  private boolean checkIfGranted(AuthorizationResult authorizationResult) {
+    return authorizationResult != null && authorizationResult.isGranted();
+  }
+}

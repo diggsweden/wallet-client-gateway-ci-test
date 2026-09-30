@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+# SPDX-License-Identifier: EUPL-1.2
+spring:
+  config:
+    import: classpath:application.yml
+  docker:
+    compose:
+      enabled: true
+      file: ./docker-compose/docker-compose.yml
+
+properties:
+  logging-filter:
+    enabled: true
+    max-payload-length: 1000
+    exclude-path:
+      exact-match: >
+        /
+      contains: >
+        /actuator, /swagger, /v3/api-docs, .html, .js, .yaml
+    sensitive-data-mask:
+      mask-value: "***MASKED***"
+      # enter values in lower case
+      headers: >
+        authorization, x-api-key, api-key, apikey, x-auth-token, cookie, set-cookie, x-csrf-token
+      body-json-fields: >
+        password, secret, token, accessToken, access_token, refreshToken, refresh_token, apiKey, api_key

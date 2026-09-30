@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: OpenSSF Scorecard Analysis
+on:
+  schedule:
+    # Saturdays at 02:35 UTC
+    - cron: "35 2 * * 6"
+    # Wednesdays at 02:35 UTC
+    - cron: "35 2 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard-analysis:
+    permissions:
+      contents: read
+      id-token: write
+    uses: diggsweden/reusable-ci/.github/workflows/security-openssf-scorecard.yml@c74f54a7377d167b748c97255ba191b954097d0d # v3 candidate
+    secrets:
+      CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
+    with:
+      reusable-ci-ref: c74f54a7377d167b748c97255ba191b954097d0d
+      publish-results: false # Keep CI-test results out of the public Scorecard API.

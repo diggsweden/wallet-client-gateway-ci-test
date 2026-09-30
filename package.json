@@ -1,0 +1,7 @@
+{
+  "name": "wallet-client-gateway-ci-test",
+  "devDependencies": {
+    "@prettier/plugin-xml": "3.4.2",
+    "prettier": "3.9.7"
+  }
+}

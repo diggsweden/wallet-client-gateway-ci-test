@@ -1,0 +1,641 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+# SPDX-License-Identifier: EUPL-1.2
+
+openapi: 3.0.3
+info:
+  title: Wallet Account API
+  version: 0.0.4
+  description: |
+    Wallet Account API tillhandahåller serveroperationer för hantering av plånbokskonton till den svenska
+    statliga digitala identitetsplånboken. Detta API används endast internt.
+
+    Wallet Account API provides backend operations to handle wallet accounts with the Swedish digital identity wallet.
+    This API is only used internally.
+  termsOfService: https://to.be.decided.xx
+  contact:
+    name: Wallet software development team, Digg Sweden
+    email: tbd@tbd.xx
+    url: https://to.be.decided.xx
+  license:
+    name: EUPL-1.2 license
+    url: https://to.be.decided.xx
+  x-sla:
+    availability: Test
+    responseTime: 24
+    support: Kontorstid
+    termsOfService: https://to.be.decided.xx
+externalDocs:
+  description: TBD. Text som ex. innehåller service level agreement, kända problem eller begränsningar.
+  url: https://to.be.decided.xx
+servers:
+  - url: '/'
+
+tags:
+  - name: API-info
+    description: Information about the API
+  - name: Account
+    description: Account operations
+
+paths:
+  /api-info:
+    get:
+      tags:
+        - API-info
+      summary: Get info about the API
+      description: Get name, version, release date, links and status.
+      operationId: getApiInfo
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiInfoResponse'
+
+  /v0/accounts:
+    post:
+      tags:
+        - Account
+      summary: Create account
+      description: Creates a new account.
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequest'
+        required: true
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '409':
+          description: Duplicate account. The unique account identifier already exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponse'
+        'default':
+          $ref: '#/components/responses/default'
+
+  /v0/accounts/{id}:
+    get:
+      tags:
+        - Account
+      summary: Get account
+      description: Get account by id
+      operationId: getAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          description: The requested account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+  /v0/accounts/{id}/wallet-keys:
+    post:
+      tags:
+        - Account
+      summary: Add a wallet key to an account
+      description: |
+        This operation adds a public wallet key (typically owned by the HSM) to the associated account.
+        Currently, only one wallet key per account is supported. Any existing key will be replaced.
+      operationId: addAccountWalletKey
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EcJwkRequest'
+        required: true
+      responses:
+        '201':
+          description: Public key added to account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcJwkResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+    get:
+      tags:
+        - Account
+      summary: Get account wallet key
+      description: Get the public wallet key(s) (typically owned by the HSM) of a given account.
+      operationId: getAccountWalletKey
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - name: kid
+          description: 'Optional. Filter on the key id attribute of the wallet key.'
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The account wallet key(s) being returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcJwkItemsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+  /v0/accounts/{id}/security-envelopes:
+    post:
+      tags:
+        - Account
+      summary: Add a security envelope to an account
+      description: |
+        This operation will add a security envelope (typically used with the HSM) to the associated account.
+        An account can only have one security envelope for each type. Any existing envelope with the reqeusted
+        type will be replaced.
+      operationId: addAccountSecurityEnvelope
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecurityEnvelopeRequest'
+        required: true
+      responses:
+        '201':
+          description: The account security envelope being added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityEnvelopeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+    get:
+      tags:
+        - Account
+      summary: Get account security envelopes
+      description: Get the security envelopes associated to a given account.
+      operationId: getAccountSecurityEnvelopes
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          description: The security envelopes being returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityEnvelopesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+  /v0/accounts/{id}/hsm-client-id:
+    post:
+      tags:
+        - Account
+      summary: Set the HSM client id for an account
+      description: Stores the HSM client identifier for the account.
+      operationId: addAccountHsmClientId
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HsmClientIdRequest'
+        required: true
+      responses:
+        '201':
+          description: HSM client id stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HsmClientIdResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+    get:
+      tags:
+        - Account
+      summary: Get the HSM client id for an account
+      description: Get the HSM client identifier stored for a given account.
+      operationId: getAccountHsmClientId
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          description: The HSM client id being returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HsmClientIdResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        'default':
+          $ref: '#/components/responses/default'
+
+components:
+  parameters:
+    AccountId:
+      in: path
+      description: 'The account id. Should be formatted as a UUID, example: b9f6edba-b69d-4e56-be22-dae25a45ff91'
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Not found
+    default:
+      description: |
+        Default response indicates any undefined request failure.
+        A 4xx status code is for situations in which an error seems to have been caused by the client.
+        A 5xx status code indicates that the server is aware that it has encountered an error or is otherwise incapable
+        of performing the request.
+
+        For details please see the HTTP/1.1 RFC 2616, chapter 10.4 Client Error 4xx and chapter 10.5 Server Error 5xx
+        at https://www.rfc-editor.org/rfc/rfc2616.html
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemResponse'
+
+  schemas:
+    ProblemResponse:
+      type: object
+      description: Problem detail object based on RFC 9457, returned on request failure with any operation.
+      example: |
+        {
+          "type": "/problem-details/field-validation-failure",
+          "status": 400,
+          "title": "Bad Request",
+          "detail": "Request body field value(s) does not validate.",
+          "instance": "/v0/accounts",
+          "transaction-id": "c228a240-b53a-4029-b770-cf47ae9c35b6",
+          "invalid-parameters": [
+            {
+              "reason": "must not be null",
+              "value": "null",
+              "property": "deviceKey"
+            }
+          ]
+        }
+      properties:
+        type:
+          type: string
+          description: |
+            A URI that identifies the problem type. When this member is null, blank or not present,
+            its value is assumed to be "about:blank". It indicates that the problem has no additional
+            semantics beyond that of the HTTP status code.
+          example: /problem-details/field-validation-failure
+        status:
+          type: integer
+          description: Reflects the http response status code with 3 digits returned by the server.
+          minimum: 100
+          maximum: 599
+          example: 400
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+          example: Field validation failure
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+          example: Request body field value(s) does not validate.
+        instance:
+          type: string
+          description: |
+            A URI reference that identifies the specific occurrence of the problem.
+            Typically the relative path of the request.
+          example: /v0/accounts
+        transaction-id:
+          type: string
+          description: A unique request identifier to be used for debug or troubleshooting.
+          example: 'c228a240-b53a-4029-b770-cf47ae9c35b6'
+        invalid-parameters:
+          type: array
+          description: |
+            A list of invalid request (header, query or body) parameters. Depending on the problem type,
+            this property might be null, empty or not present.
+          items:
+            $ref: "#/components/schemas/ProblemParameterResponse"
+      required:
+        - type
+        - status
+        - title
+        - detail
+        - instance
+
+    ProblemParameterResponse:
+      type: object
+      description: Detailed information about an invalid request parameter.
+      properties:
+        reason:
+          type: string
+          description: A human readable explanation specific to the parameter.
+          example: must not be null
+        value:
+          type: string
+          description: The requested parameter value.
+          example: null
+        property:
+          type: string
+          description: Name of the property.
+          example: deviceKey
+
+    ApiInfoResponse:
+      type: object
+      example: |
+        {
+          "name": "Wallet Account API",
+          "version": "0.0.3",
+          "releaseDate": "2026-07-31",
+          "status": "active",
+          "links": []
+        }
+      properties:
+        name:
+          type: string
+          example: Wallet Account API
+        version:
+          type: string
+          example: 0.0.3
+        releaseDate:
+          type: string
+          format: date
+          example: '2026-07-31'
+        status:
+          description: 'API lifecycle status keyword, such as alpha, beta, active, deprecated, retired or decommissioned.'
+          type: string
+          example: 'active'
+        links:
+          type: array
+          items:
+            type: string
+            example: 'https://docs.serverhost.xx/subfolder/infopage.html'
+
+    AccountRequest:
+      type: object
+      description: |
+        Represents a new account to be created. The account will be dedicated to a specific device by adding the
+        public key created by the device in the deviceKey attribute.
+      example: |
+        {
+          "deviceKey": {
+            "kid": "1f3b6eeb-76dc-4686-82df-7d4709067dae",
+            "kty": "EC",
+            "crv": "P-256,
+            "x": "1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc",
+            "y": "5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40"
+          }
+          "personalIdentityNumber": "191010101010",
+          "email": "test.testsson@test.test",
+          "phoneNumber": "0700000000"
+        }
+      properties:
+        personalIdentityNumber:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Optional. The personal identity number.
+          example: '201010101010'
+        email:
+          type: string
+          format: email
+          # The e-mail regex pattern originates from https://emailregex.com/index.html
+          # Modified to accept both lower and upper case letters.
+          pattern: (?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])
+          minLength: 1
+          maxLength: 100
+          description: Optional. Account owner's e-mail address (RFC 5322 Internet Message Format).
+          example: 'test.testsson@test.xx'
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: Optional. Account owner's phone number.
+          example: '073-1234567'
+        deviceKey:
+          $ref: '#/components/schemas/EcJwkRequest'
+      required:
+        - deviceKey
+
+    AccountResponse:
+      type: object
+      description: Represents an existing account.
+      example: |
+        {
+          "id": "b9f6edba-b69d-4e56-be22-dae25a45ff91",
+          "deviceKey": {
+            "kid": "1f3b6eeb-76dc-4686-82df-7d4709067dae",
+            "kty": "EC",
+            "crv": "P-256,
+            "x": "1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc",
+            "y": "5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40"
+          }
+          "personalIdentityNumber": "191010101010",
+          "email": "test.testsson@test.test",
+          "phoneNumber": "0700000000"
+        }
+      allOf:
+        - $ref: '#/components/schemas/AccountRequest'
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Automatically generated unique account id.
+          example: 'b9f6edba-b69d-4e56-be22-dae25a45ff91'
+        deviceKey:
+          $ref: '#/components/schemas/EcJwkResponse'
+      required:
+        - id
+
+    EcJwkRequest:
+      type: object
+      description: |
+        Represents the attributes of a JWK (JSON Web Key) for a cryptographic (public) key.
+        When adding a new key, the key id (kid) must be unique.
+      example: |
+        {
+          "kid": "1f3b6eeb-76dc-4686-82df-7d4709067dae",
+          "kty": "EC",
+          "crv": "P-256,
+          "x": "1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc",
+          "y": "5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40"
+        }
+      properties:
+        kid:
+          type: string
+          minLength: 1
+          description: Key id. Used to match a specific key among a set of keys.
+          example: '1f3b6eeb-76dc-4686-82df-7d4709067dae'
+        kty:
+          type: string
+          minLength: 1
+          description: |
+            Algorithm key type. Identifies the cryptographic algorithm family used with the key,
+            such as "RSA" or "EC".
+          example: 'EC'
+        alg:
+          type: string
+          description: |
+            Algorithm. Identifies the algorithm intended for use with the key,
+            such as "RS256" and "ES256".
+          example: 'RS256'
+        use:
+          type: string
+          description: |
+            Public key use, identifies the intended use of the public key. The "use" parameter is employed to
+            indicate whether a public key is used for encrypting data or verifying the signature on data,
+            such as "enc" or "sig".
+          example: 'enc'
+        crv:
+          type: string
+          minLength: 1
+          description: |
+            The cryptographic elliptic curve used with the key such as "P-256", "P-384" and "P-521".
+          example: 'P-256'
+        x:
+          type: string
+          minLength: 1
+          description: |
+            The x member contains the x coordinate for the elliptic curve point. It is represented as the base64url
+            encoding of the coordinate's big endian representation.
+          example: '1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc'
+        y:
+          type: string
+          minLength: 1
+          description: |
+            The y member contains the y coordinate for the elliptic curve point. It is represented as the base64url
+            encoding of the coordinate's big endian representation.
+          example: '5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40'
+      required:
+        - kid
+        - kty
+        - crv
+        - x
+        - y
+
+    EcJwkResponse:
+      type: object
+      description: Represents the attributes of a JWK (JSON Web Key) for a cryptographic (public) key.
+      example: |
+        {
+          "kid": "1f3b6eeb-76dc-4686-82df-7d4709067dae",
+          "kty": "EC",
+          "crv": "P-256,
+          "x": "1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc",
+          "y": "5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40"
+        }
+      allOf:
+        - $ref: '#/components/schemas/EcJwkRequest'
+
+    EcJwkItemsResponse:
+      type: object
+      description: Collection of EcJwkResponse items.
+      example: |
+        {
+          "items": [
+            {
+              "kid": "1f3b6eeb-76dc-4686-82df-7d4709067dae",
+              "kty": "EC",
+              "crv": "P-256,
+              "x": "1fH0eqXgMMwCIafNaDc1axdCjLlw7zpTLvLWjpPvhEc",
+              "y": "5qOejJs7BK-jLingaUTEhBrzP_YPyHfptS5yWE98I40"
+            }
+          ]
+        }
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EcJwkResponse'
+
+    SecurityEnvelopeRequest:
+      description: Security Envelope request with the current device state.
+      example: |
+        {
+          "content": "the-new-device-state-jws"
+        }
+      properties:
+        content:
+          type: string
+          description: |
+            The security envelope content. Typically encrypted opaque materials such as the current device state jws.
+          minLength: 1
+      required:
+        - content
+
+    SecurityEnvelopeResponse:
+      description: Security Envelope with the current device state.
+      example: |
+        {
+          "content": "the-current-device-state-jws"
+        }
+      allOf:
+        - $ref: '#/components/schemas/SecurityEnvelopeRequest'
+
+    SecurityEnvelopesResponse:
+      description: Collection of Security Envelope items.
+      example: |
+        {
+          "items": [
+            {
+              "content": "the-current-device-state-jws"
+            }
+          ]
+        }
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecurityEnvelopeResponse'
+
+    HsmClientIdRequest:
+      type: object
+      description: HSM Client ID request.
+      example: |
+        {
+          "clientId": "b9f6edba-b69d-4e56-be22-dae25a45ff91
+        }
+      properties:
+        clientId:
+          type: string
+          minLength: 1
+          description: HSM client identifier, minted at device-state registration.
+          example: 'b9f6edba-b69d-4e56-be22-dae25a45ff91'
+      required:
+        - clientId
+
+    HsmClientIdResponse:
+      description: HSM Client ID.
+      example: |
+        {
+          "clientId": "b9f6edba-b69d-4e56-be22-dae25a45ff91
+        }
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/HsmClientIdRequest'
+
+security: []

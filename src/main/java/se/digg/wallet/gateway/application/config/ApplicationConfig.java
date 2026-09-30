@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+package se.digg.wallet.gateway.application.config;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+@ConfigurationProperties(prefix = "properties")
+@Validated
+public record ApplicationConfig(
+    @NotBlank String apisecret,
+    String oldapisecret,
+    @NotEmpty List<String> publicPaths,
+    @NotEmpty List<String> apiKeyPaths,
+    @NotNull Walletprovider walletprovider,
+    @NotNull Walletaccount walletaccount,
+    @NotNull ChallengeCache challengeCache,
+    @NotNull WalletR2ps walletR2ps) {
+
+  public ApplicationConfig {
+    publicPaths = List.copyOf(publicPaths);
+    apiKeyPaths = List.copyOf(apiKeyPaths);
+  }
+
+  public record Walletprovider(@NotBlank String baseurl, @NotBlank String wuaPath) {
+  }
+
+  public record Walletaccount(@NotBlank String baseurl, @NotBlank Paths paths) {
+    public record Paths(@NotBlank String post, @NotBlank String get) {
+    }
+  }
+
+  public record WalletR2ps(@NotBlank String baseurl, @NotBlank Paths paths) {
+    public record Paths(
+        @NotBlank String syncOperation,
+        @NotBlank String asyncRequest,
+        @NotBlank String asyncPoll,
+        @NotBlank String newState) {
+
+    }
+  }
+
+  public record ChallengeCache(@NotBlank int ttlSeconds) {
+  }
+
+}

@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: Pull Request Workflow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches:
+      - main
+      - develop
+      - "release/**"
+      - "feature/**"
+
+permissions:
+  contents: read # Best Security practice. Jobs only get read as base, and then permissions are added as needed
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-checks:
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@c74f54a7377d167b748c97255ba191b954097d0d # v3 candidate
+    secrets:
+      CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
+    permissions:
+      contents: read # Clone repository and read source code
+      packages: read # Access GitHub Packages for Maven dependencies
+    with:
+      reusable-ci-ref: c74f54a7377d167b748c97255ba191b954097d0d
+      project-type: maven
+      # Use devbase-check linting (replaces megalint, commitlint, licenselint)
+      linters.devbasecheck: true
+      linters.megalint: false
+      linters.commitlint: false
+      linters.licenselint: false
+
+  test:
+    needs: [pr-checks]
+    if: always() # Run tests even if linting fails (get complete feedback)
+    permissions:
+      contents: read # Access test resources and source code
+      packages: read # Fetch test dependencies from GitHub Packages
+    uses: ./.github/workflows/test.yml

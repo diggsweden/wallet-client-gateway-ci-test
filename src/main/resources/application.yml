@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+# SPDX-License-Identifier: EUPL-1.2
+
+# Application Properties
+properties:
+  # apisecret (required, PROPERTIES_APISECRET) and oldapisecret (optional, for
+  # rotation, PROPERTIES_OLDAPISECRET) must be set by the deploy environment.
+  # No default here on purpose - the app fails fast at startup if apisecret is missing.
+  # Truly public paths - no authentication required
+  public-paths:
+    - "/"
+    - "/actuator/**"
+    - "/api-info"
+    - "/wallet-client-gateway-openapi-*.yaml"
+    - "/v3/api-docs/**"
+    - "/swagger-ui.html"
+    - "/swagger-ui/**"
+    - "/public/**"
+  # Paths that require a valid API key (but not challenge-response auth)
+  api-key-paths:
+    - "/v0/accounts"
+  walletprovider:
+    baseurl: http://
+  walletaccount:
+    baseurl: http://
+  wallet-r2ps:
+    baseurl: http://
+  challenge-cache:
+    ttl-seconds: 30
+  logging-filter:
+    enabled: true
+    max-payload-length: 10000
+    exclude-path:
+      exact-match: >
+        /, /wallet-client-gateway/, /api/
+      contains: >
+        /actuator, /swagger, /v3/api-docs, .html, .png, .gif, .js, .yaml
+    sensitive-data-mask:
+      mask-value: "***MASKED***"
+      # enter values in lower case
+      headers: >
+        authorization, x-api-key, api-key, apikey, x-auth-token, cookie, set-cookie, x-csrf-token
+      body-json-fields: >
+        password, secret, token, accessToken, access_token, refreshToken, refresh_token, apiKey, api_key
+  resilience:
+    retry-policy:
+      max-retries: 2
+      delay-millis: 1000
+      multiplier: 1.5
+# Wallet Client Gateway Configuration
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 10m
+spring:
+  application:
+    name: wallet-client-gateway-ci-test
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+
+# Swagger
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    use-root-path: true
+    disable-swagger-default-url: true
+    urls:
+      - url: /wallet-client-gateway-openapi-v0.yaml
+        name: Wallet Client Gateway API v0
+    urls-primary-name: Wallet Client Gateway API v0

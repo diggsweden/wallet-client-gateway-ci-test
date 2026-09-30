@@ -1,0 +1,98 @@
+// SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+package se.digg.wallet.gateway.infrastructure.account.client;
+
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientResponseException;
+import se.digg.wallet.gateway.client.account.v0.api.AccountApi;
+import se.digg.wallet.gateway.client.account.v0.model.AccountResponse;
+import se.digg.wallet.gateway.client.account.v0.model.EcJwkRequest;
+import se.digg.wallet.gateway.client.account.v0.model.HsmClientIdRequest;
+import se.digg.wallet.gateway.client.account.v0.model.SecurityEnvelopeRequest;
+import se.digg.wallet.gateway.domain.exception.AccountAlreadyExistsException;
+import se.digg.wallet.gateway.domain.model.account.Account;
+import se.digg.wallet.gateway.domain.model.account.NewAccount;
+import se.digg.wallet.gateway.domain.model.account.SecurityEnvelope;
+import se.digg.wallet.gateway.domain.model.account.SecurityEnvelopes;
+import se.digg.wallet.gateway.domain.model.common.Jwk;
+import se.digg.wallet.gateway.domain.ports.outbound.AccountPort;
+import se.digg.wallet.gateway.infrastructure.account.mapper.AccountClientMapper;
+
+@Component
+public class WalletAccountAdapter implements AccountPort {
+
+  private final AccountApi accountApi;
+  private final AccountClientMapper accountClientMapper;
+
+  public WalletAccountAdapter(
+      AccountApi accountApi,
+      AccountClientMapper accountClientMapper) {
+    this.accountApi = accountApi;
+    this.accountClientMapper = accountClientMapper;
+  }
+
+  @Override
+  public Account getAccount(UUID accountId) {
+    AccountResponse response = accountApi.getAccount(accountId);
+    return accountClientMapper.toDomain(response);
+  }
+
+  @Override
+  public Account createAccount(NewAccount newAccount) {
+    try {
+      AccountResponse response =
+          accountApi.createAccount(accountClientMapper.toClientRequest(newAccount));
+      return accountClientMapper.toDomain(response);
+
+    } catch (RestClientResponseException e) {
+      if (HttpStatus.CONFLICT.value() == e.getStatusCode().value()) {
+        throw new AccountAlreadyExistsException("The Account conflicts with an existing one");
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  @Override
+  public void addWalletKey(Jwk walletKey, String accountId) {
+    EcJwkRequest keyRequest = accountClientMapper.toClientRequest(walletKey);
+    UUID id = UUID.fromString(accountId);
+    accountApi.addAccountWalletKey(id, keyRequest);
+  }
+
+  @Override
+  public void addSecurityEnvelope(SecurityEnvelope securityEnvelope, String accountId) {
+    UUID id = UUID.fromString(accountId);
+    SecurityEnvelopeRequest request = accountClientMapper.toClientRequest(securityEnvelope);
+    accountApi.addAccountSecurityEnvelope(id, request);
+  }
+
+  @Override
+  public SecurityEnvelopes getSecurityEnvelopes(String accountId) {
+    UUID id = UUID.fromString(accountId);
+    return accountClientMapper.toDomain(accountApi.getAccountSecurityEnvelopes(id));
+  }
+
+  @Override
+  public Jwk getWalletKey(String accountId) {
+    UUID id = UUID.fromString(accountId);
+    return accountClientMapper.toDomainJwk(accountApi.getAccountWalletKey(id, null));
+  }
+
+  @Override
+  public String getHsmClientId(String accountId) {
+    UUID id = UUID.fromString(accountId);
+    return accountApi.getAccountHsmClientId(id).getClientId();
+  }
+
+  @Override
+  public void saveHsmClientId(String clientId, String accountId) {
+    UUID id = UUID.fromString(accountId);
+    HsmClientIdRequest request = HsmClientIdRequest.builder().clientId(clientId).build();
+    accountApi.addAccountHsmClientId(id, request);
+  }
+}

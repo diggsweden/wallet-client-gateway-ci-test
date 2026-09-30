@@ -1,0 +1,39 @@
+// SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+package se.digg.wallet.gateway.application.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.session.web.http.CompositeHttpSessionIdResolver;
+import org.springframework.session.web.http.CookieHttpSessionIdResolver;
+import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
+import org.springframework.session.web.http.HttpSessionIdResolver;
+
+@Configuration
+public class SessionConfig {
+  public static final String SESSION_HEADER = "SESSION";
+
+  @Bean
+  public RedisTemplate<String, String> redisTemplate(
+      RedisConnectionFactory redisConnectionFactory) {
+    var template = new RedisTemplate<String, String>();
+    template.setConnectionFactory(redisConnectionFactory);
+    template.setKeySerializer(new StringRedisSerializer());
+    template.setValueSerializer(new StringRedisSerializer());
+
+    return template;
+  }
+
+  // Allowing both for now to enable browser testing
+  @Bean
+  public HttpSessionIdResolver sessionIdResolver() {
+    return new CompositeHttpSessionIdResolver(
+        new HeaderHttpSessionIdResolver(SESSION_HEADER),
+        new CookieHttpSessionIdResolver());
+  }
+}

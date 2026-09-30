@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+spring:
+  config:
+    import: optional:classpath:application-main.yml
+
+# Application Properties
+properties:
+  apisecret: my_secret_key
+  oldapisecret: my_old_secret_key
+  public-paths:
+    - "/"
+    - "/actuator/**"
+    - "/api-info"
+    - "/wallet-client-gateway-openapi-*.yaml"
+    - "/v3/api-docs/**"
+    - "/swagger-ui.html"
+    - "/swagger-ui/**"
+    - "/public/**"
+  api-key-paths:
+    - "/v0/accounts"
+  walletprovider:
+    baseurl: http://localhost:${wiremock.provider.port:0}
+  walletaccount:
+    baseurl: http://localhost:${wiremock.account.port:0}
+  wallet-r2ps:
+    baseurl: http://localhost:${wiremock.r2ps.port:0}
+  challenge-cache:
+    ttl-seconds: 10
+
+  logging-filter:
+    enabled: true
+    max-payload-length: 1000
+    exclude-path:
+      exact-match: >
+        /
+      contains: >
+        /actuator, /swagger, /api-docs, .html, .js, .yaml
+    sensitive-data-mask:
+      mask-value: "***MASKED***"
+      # enter values in lower case
+      headers: >
+        authorization, x-api-key, api-key, apikey, x-auth-token, cookie, set-cookie, x-csrf-token
+      body-json-fields: >
+        password, secret, token, accessToken, access_token, refreshToken, refresh_token, apiKey, api_key, personalIdentificationNumber, email, phoneNumber
+  resilience:
+    retry-policy:
+      max-retries: 2
+      delay-millis: 100
+      multiplier: 1

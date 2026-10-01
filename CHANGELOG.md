@@ -5,11 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2026-10-01
+
+### Changed
+
+- Pin container boolean fix
+
 ## [0.0.5] - 2026-10-01
 
 ### Changed
 
 - Merge pull request #2 from diggsweden/test/pr-test
+
 
 ## [0.0.4] - 2026-10-01
 
@@ -29,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Test fix for pr
 
+[0.0.6]: https://github.com/diggsweden/wallet-client-gateway-ci-test/compare/v0.0.5..v0.0.6
 [0.0.5]: https://github.com/diggsweden/wallet-client-gateway-ci-test/compare/v0.0.4..v0.0.5
 [0.0.4]: https://github.com/diggsweden/wallet-client-gateway-ci-test/compare/v0.0.3..v0.0.4
 

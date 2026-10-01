@@ -6,7 +6,8 @@ SPDX-License-Identifier: CC0-1.0
 # Wallet Client Gateway CI Test
 
 This is a standalone test copy intended for `diggsweden/wallet-client-gateway-ci-test`.
-All reusable-ci workflow calls and helper refs use the pushed v3 candidate `c74f54a7377d167b748c97255ba191b954097d0d`.
+All reusable-ci workflow calls and helper refs use v3 candidate `fa23c718c0621c668c8b35666e0d31ea3a3ad357`, including the release-tag fix.
+Publish that reusable-ci revision before pushing these consumer updates.
 The default local branch is `main`.
 
 ## Local State
@@ -40,7 +41,8 @@ GHCR uses the test repository's automatic `GITHUB_TOKEN`.
 1. **Push to main:** v3 PR-quality checks and the project's Maven tests run.
 2. **Pull request:** the same v3 checks and tests run; the existing ecosystem integration workflow also runs.
 3. **Dev release:** manually run `Release Workflow Dev` on `main` or a test branch.
-4. **Release:** push a signed version tag matching the project version, for example `v0.6.11` for the initial copy.
+4. **Release:** merge the test PR, update local `main` from GitHub, then create and push a new signed version tag on that exact branch tip.
+   The workflow sets the project version from the tag name; tags on a pre-merge PR commit are rejected before version changes are pushed.
 5. **Scorecard:** run it manually if wanted; public Scorecard API publication is disabled for this test copy.
 
 Release and dev-release are real publishing workflows once triggered.
@@ -49,3 +51,6 @@ The JAR and SBOMs are attached to this test repository's GitHub release; Maven C
 
 For this public test repository, the original SLSA defaults are retained.
 If you instead create it as a private repository without Enterprise Cloud, set `enable-slsa: false` on the existing container entry and omit Code Scanning token mappings unless Code Security is enabled.
+
+If a previous run pushed a release commit but failed at tag movement, review and update `main` before choosing a new release version and tag.
+Rerunning the old pre-merge tag is not an automatic recovery procedure.

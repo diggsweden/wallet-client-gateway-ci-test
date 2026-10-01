@@ -1,7 +1,7 @@
 # Wallet Client Gateway CI Test
 
 Isolated CI test copy of Wallet Client Gateway.
-See [CI test setup](CI-TEST.md) before running PR, dev-release or release workflows.
+Se [CI test setup](CI-TEST.md) before running PR, dev-release or release workflows.
 
 [![Version](https://img.shields.io/github/v/tag/diggsweden/wallet-client-gateway-ci-test?style=for-the-badge&color=green&label=Version)](https://github.com/diggsweden/wallet-client-gateway-ci-test/tags)
 [![REUSE](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.reuse.software%2Fstatus%2Fgithub.com%2Fdiggsweden%2Fwallet-client-gateway-ci-test&query=status&style=for-the-badge&label=REUSE)](https://api.reuse.software/info/github.com/diggsweden/wallet-client-gateway-ci-test)

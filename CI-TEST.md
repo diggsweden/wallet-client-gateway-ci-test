@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC0-1.0
 # Wallet Client Gateway CI Test
 
 This is a standalone test copy intended for `diggsweden/wallet-client-gateway-ci-test`.
-All reusable-ci workflow calls and helper refs use v3 candidate `fa23c718c0621c668c8b35666e0d31ea3a3ad357`, including the release-tag fix.
+All reusable-ci workflow calls and helper refs use v3 candidate `afb3c408f56a3f136fa54cf58b5c1e36cc3ede75`, including the release-tag and container-boolean fixes.
 Publish that reusable-ci revision before pushing these consumer updates.
 The default local branch is `main`.
 

@@ -19,9 +19,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: diggsweden/reusable-ci/.github/workflows/security-openssf-scorecard.yml@fa23c718c0621c668c8b35666e0d31ea3a3ad357 # v3 candidate
+    uses: diggsweden/reusable-ci/.github/workflows/security-openssf-scorecard.yml@afb3c408f56a3f136fa54cf58b5c1e36cc3ede75 # v3 candidate
     secrets:
       CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
     with:
-      reusable-ci-ref: fa23c718c0621c668c8b35666e0d31ea3a3ad357
+      reusable-ci-ref: afb3c408f56a3f136fa54cf58b5c1e36cc3ede75
       publish-results: false # Keep CI-test results out of the public Scorecard API.

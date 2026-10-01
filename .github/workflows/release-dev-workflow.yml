@@ -24,9 +24,9 @@ jobs:
     permissions:
       contents: read # Read code for building
       packages: write # Push dev images to ghcr.io
-    uses: diggsweden/reusable-ci/.github/workflows/release-dev-orchestrator.yml@fa23c718c0621c668c8b35666e0d31ea3a3ad357 # v3 candidate
+    uses: diggsweden/reusable-ci/.github/workflows/release-dev-orchestrator.yml@afb3c408f56a3f136fa54cf58b5c1e36cc3ede75 # v3 candidate
     with:
-      reusable-ci-ref: fa23c718c0621c668c8b35666e0d31ea3a3ad357
+      reusable-ci-ref: afb3c408f56a3f136fa54cf58b5c1e36cc3ede75
       artifacts-config: .github/artifacts.yml
       project-type: maven
       java-version: "25"

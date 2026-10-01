@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   release:
-    uses: diggsweden/reusable-ci/.github/workflows/release-orchestrator.yml@c74f54a7377d167b748c97255ba191b954097d0d # v3 candidate
+    uses: diggsweden/reusable-ci/.github/workflows/release-orchestrator.yml@fa23c718c0621c668c8b35666e0d31ea3a3ad357 # v3 candidate
     permissions:
       contents: write # Create GitHub releases and tags
       pull-requests: read # Read changelog metadata
@@ -38,7 +38,7 @@ jobs:
       RELEASE_GPG_PUBLIC_KEY: ${{ secrets.RELEASE_GPG_PUBLIC_KEY }}
       CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
     with:
-      reusable-ci-ref: c74f54a7377d167b748c97255ba191b954097d0d
+      reusable-ci-ref: fa23c718c0621c668c8b35666e0d31ea3a3ad357
       artifacts-config: .github/artifacts.yml
       changelog-creator: git-cliff
       release-publisher: github-cli

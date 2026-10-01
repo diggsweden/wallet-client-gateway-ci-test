@@ -23,14 +23,14 @@ concurrency:
 
 jobs:
   pr-checks:
-    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@c74f54a7377d167b748c97255ba191b954097d0d # v3 candidate
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@fa23c718c0621c668c8b35666e0d31ea3a3ad357 # v3 candidate
     secrets:
       CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
     permissions:
       contents: read # Clone repository and read source code
       packages: read # Access GitHub Packages for Maven dependencies
     with:
-      reusable-ci-ref: c74f54a7377d167b748c97255ba191b954097d0d
+      reusable-ci-ref: fa23c718c0621c668c8b35666e0d31ea3a3ad357
       project-type: maven
       # Use devbase-check linting (replaces megalint, commitlint, licenselint)
       linters.devbasecheck: true
